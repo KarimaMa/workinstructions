@@ -1,4 +1,32 @@
 """
+used to generate unique IDs for new nodes
+"""
+class IDGen:
+	def __init__(self, n):
+		self.n = n
+	def __iter__(self):
+		return self
+	def __next__(self):
+		result = self.n
+		self.n += 1
+		return result
+
+"""
+Given a traversal order through a graph, assigns
+instance counts based on the order the parts' occurrences
+"""
+def assign_instance_counts(traversal_order):
+	attached_part_counts = {}
+
+	for node in traversal_order:
+		if node.part_type in attached_part_counts:
+			attached_part_counts[node.part_type] += 1
+		else:
+			attached_part_counts[node.part_type] = 1
+		node.instance_count = attached_part_counts[node.part_type]
+
+
+"""
 simple starting grammar for work instructions
 there are two types of actions:
 1) placement actions
@@ -9,16 +37,16 @@ parts are sorted in contact order
 attachment_op := <fastener> <part 1> ... <part n>
 """
 
-def get_part_str(part, part_counts, attached_part_counts):
-	if part_counts[part.part_type] == 1:
-		part.instance_count = 1
-		attached_part_counts[part.part_type] = 1
+def get_part_str(part):
+	if part.is_unique:
+		# part.instance_count = 1
+		# attached_part_counts[part.part_type] = 1
 		return part.part_type
 	
-	if part.instance_count is None:
-		assert attached_part_counts[part.part_type] < part_counts[part.part_type]
-		attached_part_counts[part.part_type] += 1
-		part.instance_count = attached_part_counts[part.part_type]
+	# if part.instance_count is None:
+	# 	assert attached_part_counts[part.part_type] < part_counts[part.part_type]
+	# 	attached_part_counts[part.part_type] += 1
+	# 	part.instance_count = attached_part_counts[part.part_type]
 
 	if part.instance_count == 1:
 		return "first " + part.part_type
@@ -39,21 +67,21 @@ class PlacementOp:
 		self.part = part
 		self.parts_in_contact = parts_in_contact
 
-	def print(self, part_counts, attached_part_counts):
+	def print(self):
 		if len(self.parts_in_contact) != 0:
 			if len(self.parts_in_contact) == 1:
-				parts_in_contact_str = f"the {get_part_str(self.parts_in_contact[0], part_counts, attached_part_counts)}"
+				parts_in_contact_str = f"the {get_part_str(self.parts_in_contact[0])}"
 			else:
-				parts_in_contact_str = f"the {', '.join([get_part_str(part, part_counts, attached_part_counts) for part in self.parts_in_contact[:-1]])}"
+				parts_in_contact_str = f"the {', '.join([get_part_str(part) for part in self.parts_in_contact[:-1]])}"
 				parts_in_contact_str = parts_in_contact_str.strip()
 				if len(self.parts_in_contact) == 2:
-					parts_in_contact_str += f" and the {get_part_str(self.parts_in_contact[-1], part_counts, attached_part_counts)}"
+					parts_in_contact_str += f" and the {get_part_str(self.parts_in_contact[-1])}"
 				else:
-					parts_in_contact_str += f", and the {get_part_str(self.parts_in_contact[-1], part_counts, attached_part_counts)}"
+					parts_in_contact_str += f", and the {get_part_str(self.parts_in_contact[-1])}"
 
-			print(f"align the {get_part_str(self.part, part_counts, attached_part_counts)} with {parts_in_contact_str}")
+			return f"align the {get_part_str(self.part)} with {parts_in_contact_str}\n"
 		else:
-			print(f"position the {self.part.part_type} for assembly")
+			return f"position the {self.part.part_type} for assembly\n"
 
 
 # parallelized_parts are all placed in the same way 
@@ -63,23 +91,23 @@ class ParallelPlacementOp:
 		self.parallelized_parts = parallelized_parts
 		self.parts_in_contact = parts_in_contact
 
-	def print(self, part_counts, attached_part_counts):
-		parallelized_parts_str = f"the {', '.join([get_part_str(part, part_counts, attached_part_counts) for part in self.parallelized_parts[:-1]])}"
+	def print(self):
+		parallelized_parts_str = f"the {', '.join([get_part_str(part) for part in self.parallelized_parts[:-1]])}"
 
 		parallelized_parts_str = parallelized_parts_str.strip()
-		parallelized_parts_str += f", and the {get_part_str(self.parallelized_parts[-1], part_counts, attached_part_counts)}"
+		parallelized_parts_str += f", and the {get_part_str(self.parallelized_parts[-1])}"
 
 		if len(self.parts_in_contact) != 0:
-			parts_in_contact_str = f"the {', '.join([get_part_str(part, part_counts, attached_part_counts) for part in self.parts_in_contact[:-1]])}"
+			parts_in_contact_str = f"the {', '.join([get_part_str(part) for part in self.parts_in_contact[:-1]])}"
 			parts_in_contact_str = parts_in_contact_str.strip()
 			if len(self.parts_in_contact) == 2:
-				parts_in_contact_str += f" and the {get_part_str(self.parts_in_contact[-1], part_counts, attached_part_counts)}"
+				parts_in_contact_str += f" and the {get_part_str(self.parts_in_contact[-1])}"
 			else:
-				parts_in_contact_str += f", and the {get_part_str(self.parts_in_contact[-1], part_counts, attached_part_counts)}"
+				parts_in_contact_str += f", and the {get_part_str(self.parts_in_contact[-1])}"
 
-			print(f"align {parallelized_parts_str} with {parts_in_contact_str}")
+			return f"align {parallelized_parts_str} with {parts_in_contact_str}\n"
 		else:
-			print(f"position {parallelized_parts_str} for assembly")
+			return f"position {parallelized_parts_str} for assembly\n"
 
 
 class AttachmentOp:
@@ -87,27 +115,22 @@ class AttachmentOp:
 		self.fastener = fastener
 		self.parts = parts
 
-	def print(self, part_counts, attached_part_counts):
+	def print(self):
 		if self.fastener.part_type == "screw":
 			action_str = "screw"
 		else:
 			raise Exception(f"unknown fastener type {self.fastener.part_type}")
 
-		first_part_str = f"the {get_part_str(self.parts[0], part_counts, attached_part_counts)}"
-
-		if len(self.parts[1:]) == 1:
-			other_parts_str = f"the {get_part_str(self.parts[1], part_counts, attached_part_counts)}"
-		else:
-			other_parts_str = f"the {','.join([get_part_str(part, part_counts, attached_part_counts) for part in self.parts[1:-1]])}"
-			if len(self.parts[1:]) == 2:
-				other_parts_str += f" and the {get_part_str(self.parts[-1], part_counts, attached_part_counts)}"
-			elif len(self.parts[1:]) > 2:
-				other_parts_str += f", and the {get_part_str(self.parts[-1], part_counts, attached_part_counts)}"
-
-		if len(self.parts[1:]) == 1:
-			print(f"{action_str} {first_part_str} to {other_parts_str}")
-		else:
-			print(f"{action_str} through {other_parts_str}")
+		if len(self.parts) == 1: # just fastening the fastener into one object
+			return f"{action_str} into the {get_part_str(self.parts[0])}\n"
+		elif len(self.parts) == 2: # fastening two objects together
+			first_part_str = get_part_str(self.parts[0])
+			second_part_str = get_part_str(self.parts[1])
+			return f"{action_str} the {first_part_str} to the {second_part_str}\n"
+		else: # fastening more than 2 objects together
+			parts_str = f"{','.join([get_part_str(part) for part in self.parts[:-1]])}"
+			parts_str += f", and the {get_part_str(self.parts[-1])}"
+			return f"{action_str} through the {parts_str}\n"
 
 
 # fasteners are all fastened in the same way to the the list of parts
@@ -116,7 +139,7 @@ class ParallelAttachmentOp:
 		self.parallelized_fasteners = parallelized_fasteners
 		self.parts = parts
 
-	def print(self, part_counts, attached_part_counts):
+	def print(self):
 		fastener_type = self.parallelized_fasteners[0].part_type
 		if fastener_type == "screw":
 			action_str = "screw"
@@ -125,21 +148,21 @@ class ParallelAttachmentOp:
 			raise Exception(f"unknown fastener type {fastener_type}")
 
 		# first_part_str = f"the {self.parts[0].part_type}"
-		first_part_str = f"the {get_part_str(self.parts[0], part_counts, attached_part_counts)}"
+		first_part_str = f"the {get_part_str(self.parts[0])}"
 
 		if len(self.parts[1:]) == 1:
-			other_parts_str = f"the {get_part_str(self.parts[1], part_counts, attached_part_counts)}"
+			other_parts_str = f"the {get_part_str(self.parts[1])}"
 		else:
-			other_parts_str = f"the {','.join([get_part_str(part, part_counts, attached_part_counts) for part in self.parts[1:-1]])}"
+			other_parts_str = f"the {','.join([get_part_str(part) for part in self.parts[1:-1]])}"
 			if len(self.parts[1:]) == 2:
-				other_parts_str += f" and the {get_part_str(self.parts[-1], part_counts, attached_part_counts)}"
+				other_parts_str += f" and the {get_part_str(self.parts[-1])}"
 			elif len(self.parts[1:]) > 2 :
-				other_parts_str += f", and the {get_part_str(self.parts[-1], part_counts, attached_part_counts)}"
+				other_parts_str += f", and the {get_part_str(self.parts[-1])}"
 
 		if len(self.parts) >= 2:
-			print(f"use {fasteners_str} to {action_str} {first_part_str} to {other_parts_str}")
+			return f"use {fasteners_str} to {action_str} {first_part_str} to {other_parts_str}\n"
 		else:
-			print(f"attach {fasteners_str} to {first_part_str}")
+			return f"attach {fasteners_str} to {first_part_str}\n"
 
 
 """
@@ -153,13 +176,14 @@ as children
 """
 
 class Node:
-	def __init__(self, ID, children, parents, is_fastener, part_type):
+	def __init__(self, ID, children, parents, is_fastener, part_type, is_unqiue):
 		self.ID = ID
 		self.children = children
 		self.parents = parents
 		self.is_fastener = is_fastener
 		self.part_type = part_type
 		self.instance_count = None # part type occurence number assigned during traversal
+		self.is_unqiue = is_unqiue
 
 	def __str__(self):
 		return f"id {self.ID} {self.part_type}"
@@ -168,7 +192,7 @@ class ParallelNode(Node):
 	def __init__(self, ID, nodes):
 		self.nodes = nodes
 		self.ID = ID		
-		self.children = [child for child in node.children for node in self.nodes]
+		self.children = [child for node in self.nodes for child in node.children]
 		# parallelized nodes must have the same set of parents and be the same part type
 		assert all([nodes[0].parents == node.parents for node in self.nodes])
 		assert all([nodes[0].part_type == node.part_type for node in self.nodes])
@@ -176,15 +200,17 @@ class ParallelNode(Node):
 		self.parents = nodes[0].parents
 		self.is_fastener = nodes[0].is_fastener
 		self.part_type = nodes[0].part_type
+		self.is_unique = None
 
 	def __str__(self):
 		return f"parallel node id {self.ID} {self.part_type}"
 
 
 def get_ID2node_map(node, ID2node_map):
+	if not node.ID in ID2node_map:
+		ID2node_map[node.ID] = node
 	for child in node.children:
-		if not child in ID2node_map:
-			ID2node_map[child.ID] = child
+		if not child.ID in ID2node_map:
 			get_ID2node_map(child, ID2node_map)
 
 """
@@ -192,12 +218,16 @@ When a node has a set of children beloning to the same part type and
 the same operation between itself and each child in the set, we can
 parallelize that operation across the children.
 This function will modify the DAG to merge all the children into one node
+ID is the ID to assign the new parallelized node
+contact lists contains for each fastener, all the parts it perforates in
+perforation order
 """
 def parallelize_op(parent_node, children_nodes, ID, contact_lists):
+	# print(f"parallelizing {parent_node.ID} {parent_node.part_type} with children {[node.ID for node in children_nodes]}")
+	# print(contact_lists)
 	assert(all([contact_lists[children_nodes[0].ID] == contact_lists[node.ID] for node in children_nodes]))
 	assert all([children_nodes[0].parents == node.parents for node in children_nodes])
 	# for now assert that the nodes being parallelized only have one parent
-	assert len(children_nodes[0].parents) == 1 and children_nodes[0].parents[0] == parent_node
 	assert all([children_nodes[0].part_type == node.part_type for node in children_nodes])
 
 	contact_lists[ID] = contact_lists[children_nodes[0].ID]
@@ -215,6 +245,69 @@ def parallelize_op(parent_node, children_nodes, ID, contact_lists):
 
 	return new_node
 
+
+"""
+Given a list of nodes, group ones that perform the same
+operation together. Two nodes perform the same operation 
+if they have the same part type and they share the same
+parent parts.
+"""
+def group_by_operation(nodes):
+	op_types = set()
+	for node in nodes:
+		op_type = (node.is_fastener, node.part_type, '-'.join([str(p.ID) for p in node.parents]))
+		op_types.add(op_type)
+	groups = {}
+	for op_type in op_types:
+		groups[op_type] = []
+	for node in nodes:
+		op_type = (node.is_fastener, node.part_type, '-'.join([str(p.ID) for p in node.parents]))
+		groups[op_type] += [node]
+	return groups
+
+
+"""
+Returns whether a node is the immediate parent of all
+the given children based on the contact lists which
+orders all parts in contact in topological order from 
+closest to furthest
+"""
+def is_immediate_parent(node, children, contact_lists):
+	for child in children:
+		if not node == contact_lists[child.ID][0]:
+			return False
+	return True
+
+
+"""
+Finds where parallelization of operations over parts
+can occur in a graph and mutates it to be parallelized 
+root: root node of DAG
+contact_lists: dict mapping each fastener to the parts it perforates in perforation order
+id_generator: generator to yield new unique IDs to assign to new nodes
+"""
+def parallelize_where_possible(root, contact_lists, ID2node_map, id_generator):
+	node_levels = {}
+	levels_dict = {}
+	topological_sort(root, node_levels, levels_dict)
+
+	max_level = max(levels_dict.keys())
+	for level in range(max_level,-1,-1):		
+		level_nodes = levels_dict[level]
+		for nodeID in level_nodes:
+			node = ID2node_map[nodeID]
+			if len(node.children) > 1:
+				op_groups = group_by_operation(node.children)
+				for op_type, op_group in op_groups.items():
+					# for now only parallelize over fasteners 
+					# for fasteners that go through multiple parts (i.e. multiple parents), 
+					# the parallelization should happen at their immediate parent 
+					if len(op_group) > 1 and op_type[0] and is_immediate_parent(node, op_group, contact_lists):
+						parallel_node_ID = next(id_generator)
+						# print(f"parallelizing {op_type} for parent node {node.ID}")
+						parallelize_op(node, op_group, parallel_node_ID, contact_lists)
+
+
 """
 returns number of nodes in the graph
 """
@@ -226,7 +319,6 @@ def count_nodes(root):
 
 
 def topological_sort(node, node_levels, levels_dict):
-	print(str(node))
 	if len(node.children) == 0:
 		level = 0
 		node_levels[node.ID] = level
@@ -246,6 +338,7 @@ def topological_sort(node, node_levels, levels_dict):
 				levels_dict[level] += [node.ID]
 		else:
 			levels_dict[level] = [node.ID]
+
 
 
 """
@@ -285,6 +378,22 @@ def greedy_order(last_visited_node, visited, order, priority_rule=None):
 def can_visit(node, visited):
 	return len(node.parents) == 0 or all([parent.ID in visited for parent in node.parents])
 
+
+def sort_parts_by_ordinal_number(parts):
+	part_dict = {}
+	for p in parts:
+		if p.part_type in part_dict:
+			part_dict[p.part_type] += [p]
+		else:
+			part_dict[p.part_type] = [p]
+
+	sorted_parts = []
+	for p,v in part_dict.items():
+		sorted_parts += sorted(v, key=lambda x: x.instance_count)
+
+	return sorted_parts
+
+
 """
 Program is just an ordered list of statements
 since it doesn't seem to need more complicated 
@@ -294,83 +403,47 @@ def build_program(DA_dag, ID2node_map, contact_lists, part_counts, traversal_ord
 	program = []
 	node_levels = {}
 	levels_dict = {}
-	topological_sort(DA_dag, node_levels, levels_dict)
-	for level in levels_dict:
-		print(f"{level}: {[ID2node_map[p].part_type for p in levels_dict[level]]}")
 
 	if traversal_order is None:
 		node_levels = {}
 		levels_dict = {}
 		topological_sort(DA_dag, node_levels, levels_dict)
-
 		max_level = max(levels_dict.keys())
+		traversal_order = [ID2node_map[nodeID] for level in range(max_level, -1, -1) for nodeID in levels_dict[level]]
 
-		for level in range(max_level,-1,-1):
-			levelIDs = levels_dict[level]
-			if level == max_level:
-				top_node = ID2node_map[levelIDs[0]]
-				assert len(levelIDs) == 1 and len(top_node.parents) == 0
-				statement = PlacementOp(top_node, [])
-				program += [statement]
-				print(f"level {level} nodeID {levelIDs[0]} {top_node.part_type}")
+	assign_instance_counts(traversal_order)
 
+	top_node = traversal_order[0]
+	assert len(top_node.parents) == 0
+	statement = PlacementOp(top_node, [])
+	program += [statement]
+
+	for i, node in enumerate(traversal_order[1:]):
+		if node.is_fastener:
+			parts_touching = contact_lists[node.ID]
+			if isinstance(node, ParallelNode):
+				statement = ParallelAttachmentOp(node.nodes, parts_touching)
 			else:
-				for nodeID in levelIDs:
-					node = ID2node_map[nodeID]
-					print(f"level {level} {str(node)} parents {[str(p) for p in node.parents]}")
-					if node.is_fastener:
-						parts_touching = contact_lists[nodeID]
-						print(f"touching parts {[str(p) for p in parts_touching]}")
-						if isinstance(node, ParallelNode):
-							statement = ParallelAttachmentOp(node.nodes, parts_touching)
-						else:
-							statement = AttachmentOp(node, parts_touching)
-						program += [statement]
-					else:
-						# part is not a fastener but is blocking and thus 
-						# touching all of its parents. We must align this
-						# part with all of its parents to prepare it for
-						# subsequent fastening steps. We ignore parents that
-						# are fasteners because parent fasteners do not have 
-						# notable interations with their children
-						non_fastener_parents = list(filter(lambda x: not x.is_fastener, node.parents))
-						if isinstance(node, ParallelNode):
-							statement = ParallelPlacementOp(node.nodes, non_fastener_parents)
-						else:
-							statement = PlacementOp(node, non_fastener_parents)
-						program += [statement]
-	else:
-		top_node = traversal_order[0]
-		assert len(top_node.parents) == 0
-		statement = PlacementOp(top_node, [])
-		program += [statement]
-		print(f"first node {top_node.part_type}")
-
-		for i, node in enumerate(traversal_order[1:]):
-			print(f"{i}th visited: {str(node)} parents {[str(p) for p in node.parents]}")
-			if node.is_fastener:
-				parts_touching = contact_lists[node.ID]
-				print(f"touching parts {[str(p) for p in parts_touching]}")
-				if isinstance(node, ParallelNode):
-					statement = ParallelAttachmentOp(node.nodes, parts_touching)
-				else:
-					statement = AttachmentOp(node, parts_touching)
-				program += [statement]
+				statement = AttachmentOp(node, parts_touching)
+			program += [statement]
+		else:
+			non_fastener_parents = list(filter(lambda x: not x.is_fastener, node.parents))
+			# sort the parts that need to be aligned with this part by their assigned ordinal number
+			non_fastener_parents = sort_parts_by_ordinal_number(non_fastener_parents) 
+			if isinstance(node, ParallelNode):
+				statement = ParallelPlacementOp(node.nodes, non_fastener_parents)
 			else:
-				non_fastener_parents = list(filter(lambda x: not x.is_fastener, node.parents))
-				if isinstance(node, ParallelNode):
-					statement = ParallelPlacementOp(node.nodes, non_fastener_parents)
-				else:
-					statement = PlacementOp(node, non_fastener_parents)
-				program += [statement]
+				statement = PlacementOp(node, non_fastener_parents)
+			program += [statement]
 
 	return program
 
 
-def print_program(program, part_counts, attached_part_counts):
+def get_program_str(program):
+	program_str = ""
 	for statement in program:
-		statement.print(part_counts, attached_part_counts)
-
+		program_str += statement.print()
+	return program_str.strip()
 
 """
 For now, to differentiate between sets of identical parts that have 
@@ -381,7 +454,6 @@ an ordinal number by which it is referred to: i.e. screw on the THIRD plate.
 def init_attached_part_counts(part_counts):
 	attached_part_counts = {}
 	for key in part_counts:
-		print(f"key {key}")
 		attached_part_counts[key] = 0
 	return attached_part_counts
 
@@ -394,10 +466,8 @@ def graph_walker(DA_dag, ID2node_map, func):
 	levels_dict = {}
 	topological_sort(DA_dag, node_levels, levels_dict)
 	max_level = max(levels_dict.keys())
-	print(f"in graph walker max level: {max_level}")
 	for level in range(max_level,-1,-1):
 		levelIDs = levels_dict[level]
-		print(f"level {level} levelids {levelIDs}")
 		for nodeID in levelIDs:
 			node = ID2node_map[nodeID]
 			func(node)
@@ -415,7 +485,6 @@ def merge_graphs(graph1info, graph2info, parent_node):
 	graph2root.parents = [parent_node]
 
 	graph2_starting_id = max(graph1nodes.keys()) + 1
-	print(f"in merge graphs graph 2 starting ID: {graph2_starting_id}")
 
 	def increment_id(node):
 		node.ID += graph2_starting_id
@@ -430,524 +499,4 @@ def merge_graphs(graph1info, graph2info, parent_node):
 		graph1nodes[key+graph2_starting_id] = value
 
 	return graph1nodes, graph1root, graph1contact_lists
-
-
-def test_graph0():
-	# make all the nodes first with empty fields
-	part_names = ["a", "b", "c", "d", "e", "f", "g", "h"]
-	fastener_names = ["ab", "hg", "bc", "dc", "ec", "fc", "gc"]
-	part_counts = {"block": len(part_names), "screw": len(fastener_names)}
-
-	nodes = {}
-	for name in part_names:
-		nodes[name] = Node(name, [], [], False, "block")
-	for name in fastener_names:
-		nodes[name] = Node(name, [], [], True, "screw")
-
-	nodes["ab"].children = []
-	nodes["ab"].parents = [nodes["a"]]
-
-	nodes["hg"].children = []
-	nodes["hg"].parents = [nodes["h"]]
-
-	nodes["a"].children = [nodes["ab"]]
-	nodes["a"].parents = [nodes["b"], nodes["bc"]]
-
-	nodes["h"].children = [nodes["hg"]]
-	nodes["h"].parents = [nodes["g"], nodes["gc"]]
-
-	nodes["b"].children = [nodes["a"], nodes["bc"]]
-	nodes["b"].parents = [nodes["c"], nodes["d"], nodes["dc"]]
-
-	nodes["g"].children = [nodes["h"], nodes["gc"]]
-	nodes["g"].parents = [nodes["c"], nodes["f"], nodes["fc"]]
-
-	nodes["d"].children = [nodes["b"], nodes["e"], nodes["dc"]]
-	nodes["d"].parents = [nodes["c"]]
-
-	nodes["f"].children = [nodes["g"], nodes["e"], nodes["fc"]]
-	nodes["f"].parents = [nodes["c"]]
-
-	nodes["bc"].children = [nodes["a"]]
-	nodes["bc"].parents = [nodes["b"]]
-
-	nodes["gc"].children = [nodes["h"]]
-	nodes["gc"].parents = [nodes["g"]]
-	
-	nodes["dc"].children = [nodes["b"], nodes["e"]]
-	nodes["dc"].parents = [nodes["d"]]
-
-	nodes["fc"].children = [nodes["g"], nodes["e"]]
-	nodes["fc"].parents = [nodes["f"]]
-	
-	nodes["e"].children = [nodes["ec"]]
-	nodes["e"].parents = [nodes["d"], nodes["c"], nodes["f"], \
-								nodes["dc"], nodes["fc"]]
-
-	nodes["ec"].children = []
-	nodes["ec"].parents = [nodes["e"]]
-
-	nodes["c"].children = [nodes["b"], nodes["d"], nodes["e"],\
-							 	nodes["f"], nodes["g"]]
-
-	root = nodes["c"]
-
-	contact_lists = {}
-	contact_lists["ab"] = [nodes["a"], nodes["b"]]
-	contact_lists["hg"] = [nodes["h"], nodes["g"]]
-	contact_lists["bc"] = [nodes["b"], nodes["c"]]
-	contact_lists["gc"] = [nodes["g"], nodes["c"]]
-	contact_lists["dc"] = [nodes["d"], nodes["c"]]
-	contact_lists["fc"] = [nodes["f"], nodes["c"]]
-	contact_lists["ec"] = [nodes["e"], nodes["c"]]
-
-	return nodes, root, contact_lists, part_counts
-
-
-def test_graph1(id_generator, parallelize=False):
-	num_parts = 4
-	part_counts = {'spindle block': 1, 'screws': 3}
-	part_names = [next(id_generator) for i in range(num_parts)]
-	# first part is spindle block
-	nodes = {}
-	nodes[part_names[0]] = Node(part_names[0], [], [], False, "spindle block")
-	for part in range(1,4):	
-		nodes[part_names[part]] = Node(part_names[part], [], [nodes[part_names[0]]], True, "screw")
-
-	nodes[part_names[0]].children = [nodes[part_names[i]] for i in range(1,4)]
-	nodes[part_names[0]].parents = []
-
-	root = nodes[part_names[0]]
-
-	contact_lists = {}
-	for i in range(1,4):
-		contact_lists[part_names[i]] = [root]
-
-	if parallelize:
-		# parallelize the screwing
-		screws = [nodes[i] for i in range(1,4)]
-		parallel_screws_id = next(id_generator)
-		parallelized_screws_node = parallelize_op(root, screws, parallel_screws_id, contact_lists)
-		for screw in screws:
-			del nodes[screw.ID]
-		nodes[parallel_screws_id] = parallelized_screws_node
-
-	return nodes, root, contact_lists, part_counts
-
-
-def test_graph2(id_generator, parallelize=False):
-	num_parts = 5
-	part_counts = {"spindle block": 1, "support bracket": 1, "screws": 3}
-	part_names = [next(id_generator) for i in range(num_parts)]
-	# first part is spindle block
-	nodes = {}
-	spindle_block_id = part_names[0]
-	support_bracket_id = part_names[1]
-
-	nodes[spindle_block_id] = Node(spindle_block_id, [], [], False, "spindle block")
-	nodes[support_bracket_id] = Node(support_bracket_id, [], [], False, "support bracket")
-
-	nodes[spindle_block_id].children = [nodes[support_bracket_id]]
-	nodes[support_bracket_id].parents = [nodes[spindle_block_id]]
-
-	for part in range(2,5):	
-		nodes[part_names[part]] = Node(part_names[part], [], [nodes[support_bracket_id]], True, "screw")
-
-	nodes[support_bracket_id].children = [nodes[part_names[i]] for i in range(2,5)]
-
-	root = nodes[spindle_block_id]
-
-	contact_lists = {}
-	for i in range(2,5):
-		contact_lists[part_names[i]] = [nodes[spindle_block_id], nodes[support_bracket_id]]
-
-	if parallelize:
-		# parallelize the screwing 
-		screws = [nodes[i] for i in range(2,5)]
-		parallel_screws_id = next(id_generator)
-		parallelized_screws_node = parallelize_op(nodes[support_bracket_id], screws, parallel_screws_id, contact_lists)
-		for screw in screws:
-			del nodes[screw.ID]
-		nodes[parallel_screws_id] = parallelized_screws_node
-
-	return nodes, root, contact_lists, part_counts
-
-
-"""
-same as graph2 but without root node, used
-for insertion into graph 1
-"""
-def test_graph1and2(id_generator, parallelize=False):
-	num_parts = 8
-	part_counts = {'spindle block': 1, 'support bracket': 1, 'screws': 6}
-	part_names = [next(id_generator) for i in range(num_parts)]
-	spindle_block_id = part_names[0]
-	nodes = {}
-	nodes[spindle_block_id] = Node(spindle_block_id, [], [], False, "spindle block")
-
-	# screws into spindle block
-	for part in range(1,4):	
-		nodes[part_names[part]] = Node(part_names[part], [], [nodes[spindle_block_id]], True, "screw")
-
-	nodes[spindle_block_id].children = [nodes[part_names[i]] for i in range(1,4)]
-	nodes[spindle_block_id].parents = []
-
-	root = nodes[spindle_block_id]
-
-	contact_lists = {}
-	for i in range(1,4):
-		contact_lists[part_names[i]] = [nodes[spindle_block_id]]
-
-	if parallelize:
-		# parallelize the screwing
-		screws = [nodes[i] for i in range(1,4)]
-		parallel_screws_id = next(id_generator)
-		parallelized_screws_node = parallelize_op(root, screws, parallel_screws_id, contact_lists)
-		for screw in screws:
-			del nodes[screw.ID]
-		nodes[parallel_screws_id] = parallelized_screws_node
-
-	support_bracket_id = part_names[4]
-	nodes[support_bracket_id] = Node(support_bracket_id, [], [], False, "support bracket")
-
-	# screws through support backet and spindle block
-	for part in range(5,8):	
-		nodes[part_names[part]] = Node(part_names[part], [], [nodes[support_bracket_id]], True, "screw")
-
-	nodes[support_bracket_id].children = [nodes[part_names[i]] for i in range(5,8)]
-	nodes[support_bracket_id].parents = [nodes[spindle_block_id]]
-	nodes[spindle_block_id].children += [nodes[support_bracket_id]]
-
-	for i in range(5,8):
-		contact_lists[part_names[i]] = [nodes[spindle_block_id], nodes[support_bracket_id]]
-
-	if parallelize:
-		# parallelize the screwing 
-		screws = [nodes[i] for i in range(5,8)]
-		parallel_screws_id = next(id_generator)
-		parallelized_screws_node = parallelize_op(nodes[support_bracket_id], screws, parallel_screws_id, contact_lists)
-		for screw in screws:
-			del nodes[screw.ID]
-		nodes[parallel_screws_id] = parallelized_screws_node
-
-	return nodes, root, contact_lists, part_counts
-
-
-
-"""
-same as graph2 but without root node, used
-for insertion into graph 1
-"""
-def test_graph123(id_generator, parallelize=False):
-	num_parts = 12
-	# how many of each part type there is
-	part_counts = {"spindle block": 1, "support bracket": 2, "screws": 9}
-
-	part_names = [next(id_generator) for i in range(num_parts)]
-
-	# graph 1 
-	spindle_block_id = part_names[0]
-	nodes = {}
-	nodes[spindle_block_id] = Node(spindle_block_id, [], [], False, "spindle block")
-
-	# screws into spindle block
-	for part in range(1,4):	
-		nodes[part_names[part]] = Node(part_names[part], [], [nodes[spindle_block_id]], True, "screw")
-
-	nodes[spindle_block_id].children = [nodes[part_names[i]] for i in range(1,4)]
-	nodes[spindle_block_id].parents = []
-
-	root = nodes[spindle_block_id]
-
-	contact_lists = {}
-	for i in range(1,4):
-		contact_lists[part_names[i]] = [nodes[spindle_block_id]]
-
-	if parallelize:
-		# parallelize the screwing
-		screws = [nodes[i] for i in range(1,4)]
-		parallel_screws_id = next(id_generator)
-		parallelized_screws_node = parallelize_op(root, screws, parallel_screws_id, contact_lists)
-		for screw in screws:
-			del nodes[screw.ID]
-		nodes[parallel_screws_id] = parallelized_screws_node
-
-	# graph 2 - screws through support backet and spindle block
-	support_bracket_id1 = part_names[4]
-	nodes[support_bracket_id1] = Node(support_bracket_id1, [], [], False, "support bracket")
-
-	for part in range(5,8):	
-		nodes[part_names[part]] = Node(part_names[part], [], [nodes[support_bracket_id1]], True, "screw")
-
-	nodes[support_bracket_id1].children = [nodes[part_names[i]] for i in range(5,8)]
-	nodes[support_bracket_id1].parents = [nodes[spindle_block_id]]
-	nodes[spindle_block_id].children += [nodes[support_bracket_id1]]
-
-	for i in range(5,8):
-		contact_lists[part_names[i]] = [nodes[support_bracket_id1], nodes[spindle_block_id]]
-
-	if parallelize:
-		# parallelize the screwing 
-		screws = [nodes[i] for i in range(5,8)]
-		parallel_screws_id = next(id_generator)
-		parallelized_screws_node = parallelize_op(nodes[support_bracket_id1], screws, parallel_screws_id, contact_lists)
-		for screw in screws:
-			del nodes[screw.ID]
-		nodes[parallel_screws_id] = parallelized_screws_node
-
-	# graph 3 - other support bracket
-	support_bracket_id2 = part_names[8]
-	nodes[support_bracket_id2] = Node(support_bracket_id2, [], [], False, "support bracket")
-
-	for part in range(9,12):	
-		nodes[part_names[part]] = Node(part_names[part], [], [nodes[support_bracket_id2]], True, "screw")
-
-	nodes[support_bracket_id2].children = [nodes[part_names[i]] for i in range(9,12)]
-	nodes[support_bracket_id2].parents = [nodes[spindle_block_id]]
-	nodes[spindle_block_id].children += [nodes[support_bracket_id2]]
-
-	for i in range(9,12):
-		contact_lists[part_names[i]] = [nodes[support_bracket_id2], nodes[spindle_block_id]]
-
-	if parallelize:
-		# parallelize the screwing 
-		screws = [nodes[i] for i in range(9,12)]
-		parallel_screws_id = next(id_generator)
-		parallelized_screws_node = parallelize_op(nodes[support_bracket_id2], screws, parallel_screws_id, contact_lists)
-		for screw in screws:
-			del nodes[screw.ID]
-		nodes[parallel_screws_id] = parallelized_screws_node
-
-	return nodes, root, contact_lists, part_counts
-
-
-	
-"""
-Full assembly steps 1,2,3, and 4
-"""
-def test_graph1234(id_generator, parallelize=False):
-	num_parts = 15
-	# how many of each part type there is
-	part_counts = {
-				"spindle block": 1, 
-				"support bracket": 2,
-				"screws": 11,
-				"backing plate": 1}
-
-	part_names = [next(id_generator) for i in range(num_parts)]
-
-	# graph 1 
-	spindle_block_id = part_names[0]
-	nodes = {}
-	nodes[spindle_block_id] = Node(spindle_block_id, [], [], False, "spindle block")
-
-	# screws into spindle block
-	for part in range(1,4):	
-		nodes[part_names[part]] = Node(part_names[part], [], [nodes[spindle_block_id]], True, "screw")
-
-	nodes[spindle_block_id].children = [nodes[part_names[i]] for i in range(1,4)]
-	nodes[spindle_block_id].parents = []
-
-	root = nodes[spindle_block_id]
-
-	contact_lists = {}
-	for i in range(1,4):
-		contact_lists[part_names[i]] = [nodes[spindle_block_id]]
-
-	if parallelize:
-		# parallelize the screwing
-		screws = [nodes[i] for i in range(1,4)]
-		parallel_screws_id = next(id_generator)
-		parallelized_screws_node = parallelize_op(root, screws, parallel_screws_id, contact_lists)
-		for screw in screws:
-			del nodes[screw.ID]
-		nodes[parallel_screws_id] = parallelized_screws_node
-
-	# graph 2 - screws through support backet and spindle block
-	support_bracket_id1 = part_names[4]
-	nodes[support_bracket_id1] = Node(support_bracket_id1, [], [], False, "support bracket")
-
-	for part in range(5,8):	
-		nodes[part_names[part]] = Node(part_names[part], [], [nodes[support_bracket_id1]], True, "screw")
-
-	nodes[support_bracket_id1].children = [nodes[part_names[i]] for i in range(5,8)]
-	nodes[support_bracket_id1].parents = [nodes[spindle_block_id]]
-	nodes[spindle_block_id].children += [nodes[support_bracket_id1]]
-
-	for i in range(5,8):
-		contact_lists[part_names[i]] = [nodes[support_bracket_id1], nodes[spindle_block_id]]
-
-	if parallelize:
-		# parallelize the screwing 
-		screws = [nodes[i] for i in range(5,8)]
-		parallel_screws_id = next(id_generator)
-		parallelized_screws_node = parallelize_op(nodes[support_bracket_id1], screws, parallel_screws_id, contact_lists)
-		for screw in screws:
-			del nodes[screw.ID]
-		nodes[parallel_screws_id] = parallelized_screws_node
-
-	# graph 3 - other support bracket
-	support_bracket_id2 = part_names[8]
-	nodes[support_bracket_id2] = Node(support_bracket_id2, [], [], False, "support bracket")
-
-	for part in range(9,12):	
-		nodes[part_names[part]] = Node(part_names[part], [], [nodes[support_bracket_id2]], True, "screw")
-
-	nodes[support_bracket_id2].children = [nodes[part_names[i]] for i in range(9,12)]
-	nodes[support_bracket_id2].parents = [nodes[spindle_block_id]]
-	nodes[spindle_block_id].children += [nodes[support_bracket_id2]]
-
-	for i in range(9,12):
-		contact_lists[part_names[i]] = [nodes[support_bracket_id2], nodes[spindle_block_id]]
-
-	if parallelize:
-		# parallelize the screwing 
-		screws = [nodes[i] for i in range(9,12)]
-		parallel_screws_id = next(id_generator)
-		parallelized_screws_node = parallelize_op(nodes[support_bracket_id2], screws, parallel_screws_id, contact_lists)
-		for screw in screws:
-			del nodes[screw.ID]
-		nodes[parallel_screws_id] = parallelized_screws_node
-
-
-	# graph 4 - backing plate
-	backing_plate_id = part_names[12]
-	nodes[backing_plate_id] = Node(backing_plate_id, [], [], False, "backing plate")
-	
-	# one screw goes into each support bracket through to the backing plate	
-	nodes[part_names[13]] = Node(part_names[13], [], [nodes[support_bracket_id1], nodes[backing_plate_id]], True, "screw")
-	nodes[part_names[14]] = Node(part_names[14], [], [nodes[support_bracket_id2], nodes[backing_plate_id]], True, "screw")
-	nodes[backing_plate_id].children = [nodes[part_names[13]], nodes[part_names[14]]]
-
-	nodes[support_bracket_id1].children += [nodes[part_names[13]]]
-	nodes[support_bracket_id2].children += [nodes[part_names[14]]]
-
-	# backing plate touches spindle block and both support brackets
-	nodes[backing_plate_id].parents = [nodes[spindle_block_id], nodes[support_bracket_id1], nodes[support_bracket_id2]]
-
-	nodes[spindle_block_id].children += [nodes[backing_plate_id]]
-	nodes[support_bracket_id1].children += [nodes[backing_plate_id]]
-	nodes[support_bracket_id2].children += [nodes[backing_plate_id]]
-
-	# screw goes through support bracket to backing plate
-	contact_lists[part_names[13]] = [nodes[support_bracket_id1], nodes[backing_plate_id]]
-	contact_lists[part_names[14]] = [nodes[support_bracket_id2], nodes[backing_plate_id]]
-
-	return nodes, root, contact_lists, part_counts
-
-
-
-if __name__ == "__main__":
-
-	class IDGen:
-		def __init__(self, n):
-			self.n = n
-		def __iter__(self):
-			return self
-		def __next__(self):
-			result = self.n
-			self.n += 1
-			return result
-
-	nodes, root, contact_lists, part_counts = test_graph0()
-	attached_part_counts = init_attached_part_counts(part_counts)
-
-	# check graph was built correctly 
-	for node_name, node in nodes.items():
-		for parent in node.parents:
-			assert node in parent.children, f"node {node_name} has parent {parent.ID} but {parent.ID} does not have {node_name} as child"
-	
-		for child in node.children:
-			assert node in child.parents, f"node {node_name} has child {child.ID} but {child.ID} does not have {node_name} as parent"
-
-	program = build_program(root, nodes, contact_lists, part_counts)
-	print_program(program, part_counts, attached_part_counts)
-	
-	print('#############################')
-	print(f"testing on sample diagram 1 without parallelization")
-	id_generator = IDGen(0)
-	nodes, root, contact_lists, part_counts = test_graph1(id_generator, parallelize=False)
-	attached_part_counts = init_attached_part_counts(part_counts)
-
-	for node_name, node in nodes.items():
-		for parent in node.parents:
-			assert node in parent.children, f"node {node_name} has parent {parent.ID} but {parent.ID} does not have {node_name} as child"
-	
-		for child in node.children:
-			assert node in child.parents, f"node {node_name} has child {child.ID} but {child.ID} does not have {node_name} as parent"
-
-	program = build_program(root, nodes, contact_lists, part_counts)
-	print_program(program, part_counts, attached_part_counts)
-
-	print(f"testing on sample diagram 1 with parallelization")
-	id_generator = IDGen(0)
-	nodes, root, contact_lists, part_counts = test_graph1(id_generator, parallelize=True)
-	attached_part_counts = init_attached_part_counts(part_counts)
-
-	program = build_program(root, nodes, contact_lists, part_counts)
-	print_program(program, part_counts, attached_part_counts)
-
-	print('#############################')
-	print(f"testing on sample diagram 2 without parallelization")
-	id_generator = IDGen(0)
-	nodes, root, contact_lists, part_counts = test_graph2(id_generator, parallelize=False)
-	attached_part_counts = init_attached_part_counts(part_counts)
-
-	for node_name, node in nodes.items():
-		for parent in node.parents:
-			assert node in parent.children, f"node {node_name} has parent {parent.ID} but {parent.ID} does not have {node_name} as child"
-	
-		for child in node.children:
-			assert node in child.parents, f"node {node_name} has child {child.ID} but {child.ID} does not have {node_name} as parent"
-
-	program = build_program(root, nodes, contact_lists, part_counts)
-	print_program(program, part_counts, attached_part_counts)
-
-	print(f"testing on sample diagram 2 with parallelization")
-	id_generator = IDGen(0)
-	nodes, root, contact_lists, part_counts = test_graph2(id_generator, parallelize=True)
-	attached_part_counts = init_attached_part_counts(part_counts)
-
-	program = build_program(root, nodes, contact_lists, part_counts)
-	print_program(program, part_counts, attached_part_counts)
-
-	print('#############################')
-	print(f"testing graphs 1 and 2 combined:")
-	id_generator = IDGen(0)
-
-	nodes, root, contact_lists, part_counts = test_graph1and2(id_generator, parallelize=True)
-	attached_part_counts = init_attached_part_counts(part_counts)
-
-	program = build_program(root, nodes, contact_lists, part_counts)
-	print_program(program, part_counts, attached_part_counts)
-
-	print('#############################')
-	print(f"testing graphs 1, 2, and 3 combined:")
-	id_generator = IDGen(0)
-
-	nodes, root, contact_lists, part_counts = test_graph123(id_generator, parallelize=True)
-	attached_part_counts = init_attached_part_counts(part_counts)
-
-	visited = [root.ID]
-	order = [root]
-	greedy_order(root, visited, order, fasteners_first)
-
-	program = build_program(root, nodes, contact_lists, part_counts, order)
-	print_program(program, part_counts, attached_part_counts)
-
-
-	print('#############################')
-	print(f"testing graphs 1, 2, 3, and 4 combined:")
-	id_generator = IDGen(0)
-
-	nodes, root, contact_lists, part_counts = test_graph1234(id_generator, parallelize=True)
-	attached_part_counts = init_attached_part_counts(part_counts)
-
-	visited = [root.ID]
-	order = [root]
-	greedy_order(root, visited, order, fasteners_first)
-
-	program = build_program(root, nodes, contact_lists, part_counts, order)
-	print_program(program, part_counts, attached_part_counts)
-
 

@@ -1,0 +1,233 @@
+[
+    {
+        "id": 0,
+        "name": "91290A215_0",
+        "parents": [
+            11,
+            13
+        ],
+        "children": [],
+        "part_type": null,
+        "is_fastener": true,
+        "fastened_parts": [
+            11,
+            13
+        ]
+    },
+    {
+        "id": 1,
+        "name": "91290A215_1",
+        "parents": [
+            11,
+            12
+        ],
+        "children": [],
+        "part_type": null,
+        "is_fastener": true,
+        "fastened_parts": [
+            11,
+            12
+        ]
+    },
+    {
+        "id": 2,
+        "name": "91290A434_0",
+        "parents": [
+            13,
+            14
+        ],
+        "children": [],
+        "part_type": null,
+        "is_fastener": true,
+        "fastened_parts": [
+            13,
+            14
+        ]
+    },
+    {
+        "id": 3,
+        "name": "91290A434_1",
+        "parents": [
+            12,
+            14
+        ],
+        "children": [],
+        "part_type": null,
+        "is_fastener": true,
+        "fastened_parts": [
+            12,
+            14
+        ]
+    },
+    {
+        "id": 4,
+        "name": "91290A434_2",
+        "parents": [
+            13,
+            14
+        ],
+        "children": [],
+        "part_type": null,
+        "is_fastener": true,
+        "fastened_parts": [
+            13,
+            14
+        ]
+    },
+    {
+        "id": 5,
+        "name": "91290A434_3",
+        "parents": [
+            14
+        ],
+        "children": [],
+        "part_type": null,
+        "is_fastener": true,
+        "fastened_parts": [
+            14
+        ]
+    },
+    {
+        "id": 6,
+        "name": "91290A434_4",
+        "parents": [
+            12,
+            14
+        ],
+        "children": [],
+        "part_type": null,
+        "is_fastener": true,
+        "fastened_parts": [
+            12,
+            14
+        ]
+    },
+    {
+        "id": 7,
+        "name": "91290A434_5",
+        "parents": [
+            12,
+            14
+        ],
+        "children": [],
+        "part_type": null,
+        "is_fastener": true,
+        "fastened_parts": [
+            12,
+            14
+        ]
+    },
+    {
+        "id": 8,
+        "name": "91290A434_6",
+        "parents": [
+            13,
+            14
+        ],
+        "children": [],
+        "part_type": null,
+        "is_fastener": true,
+        "fastened_parts": [
+            13,
+            14
+        ]
+    },
+    {
+        "id": 9,
+        "name": "91290A434_7",
+        "parents": [
+            14
+        ],
+        "children": [],
+        "part_type": null,
+        "is_fastener": true,
+        "fastened_parts": [
+            14
+        ]
+    },
+    {
+        "id": 10,
+        "name": "91290A434_8",
+        "parents": [
+            14
+        ],
+        "children": [],
+        "part_type": null,
+        "is_fastener": true,
+        "fastened_parts": [
+            14
+        ]
+    },
+    {
+        "id": 11,
+        "name": "Backing Plate_0",
+        "parents": [
+            12,
+            13,
+            14
+        ],
+        "children": [
+            0,
+            1
+        ],
+        "part_type": null,
+        "is_fastener": false,
+        "fastened_parts": null
+    },
+    {
+        "id": 12,
+        "name": "Side Support_0",
+        "parents": [
+            14
+        ],
+        "children": [
+            3,
+            6,
+            7,
+            1,
+            11
+        ],
+        "part_type": null,
+        "is_fastener": false,
+        "fastened_parts": null
+    },
+    {
+        "id": 13,
+        "name": "Side Support_1",
+        "parents": [
+            14
+        ],
+        "children": [
+            2,
+            4,
+            8,
+            0,
+            11
+        ],
+        "part_type": null,
+        "is_fastener": false,
+        "fastened_parts": null
+    },
+    {
+        "id": 14,
+        "name": "Spindle Block_0",
+        "parents": [],
+        "children": [
+            2,
+            4,
+            8,
+            3,
+            6,
+            7,
+            5,
+            9,
+            10,
+            11,
+            13,
+            12
+        ],
+        "part_type": null,
+        "is_fastener": false,
+        "fastened_parts": null
+    }
+]
